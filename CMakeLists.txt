@@ -287,19 +287,17 @@ set_package_properties(
 )
 
 if ( PYTHONLIBS_FOUND )
-    include( BoostPython3 )
-    find_boost_python3( ${BOOSTPYTHON_VERSION} ${PYTHONLIBS_VERSION_STRING} CALAMARES_BOOST_PYTHON3_FOUND )
-    set_package_properties(
-        Boost PROPERTIES
-        PURPOSE "Boost.Python is used for Python job modules."
-    )
-
-    find_package( PythonQt )
-    set_package_properties( PythonQt PROPERTIES
-        DESCRIPTION "A Python embedding solution for Qt applications."
-        URL "http://pythonqt.sourceforge.net"
-        PURPOSE "PythonQt is used for Python view modules."
-    )
+    find_package(boost_python)
+    if(NOT TARGET Boost::python)
+        find_package(Boost ${BOOSTPYTHON_VERSION} COMPONENTS python)
+        set_package_properties(Boost PROPERTIES
+            PURPOSE "Boost.Python is used for Python job modules (because WITH_PYBIND11 is OFF)."
+            TYPE REQUIRED
+        )
+    else()
+        message(STATUS "Found boost_python with target Boost::python")
+        set(Boost_FOUND ON)
+    endif()
 endif()
 
 if( NOT PYTHONLIBS_FOUND OR NOT CALAMARES_BOOST_PYTHON3_FOUND )

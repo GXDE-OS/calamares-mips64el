@@ -30,6 +30,7 @@
 
 #include <QApplication>
 #include <QPainter>
+#include <QPainterPath>
 #include <QMouseEvent>
 #include <QStyleOption>
 

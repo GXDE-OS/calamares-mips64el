@@ -673,7 +673,7 @@ PartitionCoreModule::scanForLVMPVs()
     }
 
     // Update LVM::pvList
-    LvmDevice::scanSystemLVM( physicalDevices );
+    //LvmDevice::scanSystemLVM( physicalDevices );
 
 #ifdef WITH_KPMCOREGT33
     for ( auto p : LVM::pvList::list() )
