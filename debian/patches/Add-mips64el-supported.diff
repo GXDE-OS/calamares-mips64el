@@ -1,0 +1,343 @@
+diff -ruN calamares-3.2.4-old/com.github.calamares.calamares.policy calamares-3.2.4/com.github.calamares.calamares.policy
+--- calamares-3.2.4-old/com.github.calamares.calamares.policy	2020-09-08 20:06:16.000000000 +0800
++++ calamares-3.2.4/com.github.calamares.calamares.policy	2020-11-05 18:37:38.708347321 +0800
+@@ -14,7 +14,7 @@
+     <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+-     <allow_active>auth_admin</allow_active>
++     <allow_active>yes</allow_active>
+     </defaults>
+     <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/calamares</annotate>
+     <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+diff -ruN calamares-3.2.4-old/src/modules/bootloader/bootloader.conf calamares-3.2.4/src/modules/bootloader/bootloader.conf
+--- calamares-3.2.4-old/src/modules/bootloader/bootloader.conf	2020-11-05 09:53:01.592409740 +0800
++++ calamares-3.2.4/src/modules/bootloader/bootloader.conf	2020-11-05 09:52:04.000000000 +0800
+@@ -29,6 +29,7 @@
+ grubInstall: "grub-install"
+ grubMkconfig: "grub-mkconfig"
+ grubCfg: "/boot/grub/grub.cfg"
++kunlunGrubCfg: "/EFI/BOOT/grub.cfg"
+ grubProbe: "grub-probe"
+ efiBootMgr: "efibootmgr"
+ 
+diff -ruN calamares-3.2.4-old/src/modules/bootloader/main.py calamares-3.2.4/src/modules/bootloader/main.py
+--- calamares-3.2.4-old/src/modules/bootloader/main.py	2020-11-05 09:53:01.596316030 +0800
++++ calamares-3.2.4/src/modules/bootloader/main.py	2020-11-05 17:46:59.536071548 +0800
+@@ -332,7 +332,6 @@
+     check_target_env_call([libcalamares.job.configuration["grubMkconfig"],
+                            "-o", libcalamares.job.configuration["grubCfg"]])
+ 
+-
+ def install_secureboot(efi_directory):
+     """
+     Installs the secureboot shim in the system by calling efibootmgr.
+@@ -422,25 +421,30 @@
+     :return:
+     """
+ 
+-    fw_type = libcalamares.globalstorage.value("firmwareType")
+-
+-    if (libcalamares.globalstorage.value("bootLoader") is None
+-            and fw_type != "efi"):
+-        return None
+-
+-    partitions = libcalamares.globalstorage.value("partitions")
+-
+-    if fw_type == "efi":
+-        esp_found = False
++#    fw_type = libcalamares.globalstorage.value("firmwareType")
++#
++#    if (libcalamares.globalstorage.value("bootLoader") is None
++#            and fw_type != "efi"):
++#        return None
++#
++#    partitions = libcalamares.globalstorage.value("partitions")
++#
++#    if fw_type == "efi":
++#        esp_found = False
++#
++#        for partition in partitions:
++#            if (partition["mountPoint"] ==
++#                    libcalamares.globalstorage.value("efiSystemPartition")):
++#                esp_found = True
++#
++#        if not esp_found:
++#            return None
++#
++#    prepare_bootloader(fw_type)
+ 
+-        for partition in partitions:
+-            if (partition["mountPoint"] ==
+-                    libcalamares.globalstorage.value("efiSystemPartition")):
+-                esp_found = True
+-
+-        if not esp_found:
+-            return None
+-
+-    prepare_bootloader(fw_type)
++    check_target_env_call([libcalamares.job.configuration["grubMkconfig"],
++                           "-o", libcalamares.job.configuration["grubCfg"]])
++    check_target_env_call(["cp", "-avrp", libcalamares.job.configuration["grubCfg"],
++                               libcalamares.job.configuration["kunlunGrubCfg"]])
+ 
+     return None
+diff -ruN calamares-3.2.4-old/src/modules/dracut/main.py calamares-3.2.4/src/modules/dracut/main.py
+--- calamares-3.2.4-old/src/modules/dracut/main.py	2020-11-05 09:53:01.596316030 +0800
++++ calamares-3.2.4/src/modules/dracut/main.py	2020-11-05 09:52:04.000000000 +0800
+@@ -21,6 +21,7 @@
+ #   along with Calamares. If not, see <http://www.gnu.org/licenses/>.
+ 
+ import libcalamares
++import subprocess
+ from libcalamares.utils import target_env_call
+ 
+ 
+@@ -30,7 +31,11 @@
+ 
+     :return:
+     """
+-    return target_env_call(['dracut', '-f'])
++    ret = subprocess.Popen(["uname", "-r"], stdout=subprocess.PIPE)
++    kver, err = ret.communicate()
++    kver = kver.rstrip().decode()
++    initrd_name = "/boot/initrd-" + kver + ".img"
++    return target_env_call(['dracut', '-f', "--kver", kver, initrd_name])
+ 
+ 
+ def run():
+diff -ruN calamares-3.2.4-old/src/modules/grubcfg/main.py calamares-3.2.4/src/modules/grubcfg/main.py
+--- calamares-3.2.4-old/src/modules/grubcfg/main.py	2020-11-05 09:53:01.596316030 +0800
++++ calamares-3.2.4/src/modules/grubcfg/main.py	2020-11-05 09:52:04.000000000 +0800
+@@ -23,6 +23,8 @@
+ #   along with Calamares. If not, see <http://www.gnu.org/licenses/>.
+ 
+ import libcalamares
++import inspect
++import subprocess
+ import os
+ import re
+ 
+@@ -234,4 +236,9 @@
+     branding = libcalamares.globalstorage.value("branding")
+     distributor = branding["bootloaderEntryName"]
+ 
++    current_path = os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda:0)))
++    pmon_bash_file = os.path.join(current_path, "pmon-config.sh")
++
++    subprocess.check_call(["bash", pmon_bash_file, root_mount_point])
++
+     return modify_grub_default(partitions, root_mount_point, distributor)
+diff -ruN calamares-3.2.4-old/src/modules/grubcfg/pmon-config.sh calamares-3.2.4/src/modules/grubcfg/pmon-config.sh
+--- calamares-3.2.4-old/src/modules/grubcfg/pmon-config.sh	1970-01-01 08:00:00.000000000 +0800
++++ calamares-3.2.4/src/modules/grubcfg/pmon-config.sh	2020-11-05 17:50:34.157052104 +0800
+@@ -0,0 +1,82 @@
++#!/bin/bash
++
++###############################################################################
++# default 0
++# timeout 3
++# showmenu 0
++#   
++# title Loongson 20 SP1 GNU/Linux 4.19.0-loongson-3-desktop
++#         kernel /dev/fs/ext2@wd0/boot/vmlinuz-4.19.0-loongson-3-desktop
++#         initrd /dev/fs/ext2@wd0/boot/initrd-4.19.0-loongson-3-desktop.image
++#         args console=tty loglevel=0 locales=zh_CN.UTF-8  splash quiet root=UUID=*8-*4-*4-*4-*12
++###############################################################################
++
++root_mount_point=$1
++kver=$(uname -r) 
++
++[ -d "$root_mount_point" ] || exit 0
++
++function sd2wd
++{
++    readonly local char_map=({a..z})
++    n=0
++    for char in ${char_map[*]}; do
++        eval "local diskmap${char}=$n"
++        let n=n+1
++    done
++    local sdpart=$1
++    local order=$(echo "$sdpart" | grep '[[:digit:]]\+' -o)
++    let index=order-1
++    local disk_char="${sdpart%$order}"
++    disk_char="${disk_char#/dev/sd}"
++    disk_var="diskmap$disk_char"
++    part_var="${char_map[$index]}"
++    [ "$part_var" = "a" ] && part_var=
++    wdpart="wd${!disk_var}${part_var}"
++    echo $wdpart
++}
++
++entry=('title Loongson Desktop GNU/Linux %kver%'
++       '    kernel /dev/fs/%fstype%@%wdx%/boot/vmlinuz-%kver%'
++       '    initrd /dev/fs/%fstype%@%wdx%/boot/initrd-%kver%.img'
++       '    args console=tty loglevel=0 locales=zh_CN.UTF-8 splash quiet root=%rootdev%')
++
++boot_dir=$root_mount_point/boot
++cfg_file=${boot_dir}/boot.cfg
++
++[ -d "$boot_dir" ] || mkdir $boot_dir
++[ -f "$cfg_file" ] || touch $cfg_file
++
++root_dev=($(LANG= df $root_mount_point --output=source))
++root_dev=${root_dev[1]}
++root_uuid=$(blkid -o export $root_dev | grep ^UUID=)
++boot_dev=($(LANG= df $boot_dir --output=source))
++boot_dev=${boot_dev[1]}
++boot_fstype=($(LANG= df $boot_dev --output=fstype))
++boot_fstype=${boot_fstype[1]}
++wd_boot=$(sd2wd $boot_dev)
++echo $boot_fstype
++
++[ "$boot_fstype" = "ext4" ] && boot_fstype="ext2"
++[ "$boot_fstype" = "ext3" ] && boot_fstype="ext2"
++
++title=${entry[0]/\%kver\%/$kver}
++kernel=${entry[1]/\%fstype\%/$boot_fstype}
++kernel=${kernel/\%wdx\%/$wd_boot}
++kernel=${kernel/\%kver\%/$kver}
++initrd=${entry[2]/\%fstype\%/$boot_fstype}
++initrd=${initrd/\%wdx\%/$wd_boot}
++initrd=${initrd/\%kver\%/$kver}
++args=${entry[3]/\%rootdev\%/$root_uuid}
++
++if [ "$root_dev" != "$boot_dev" ]; then
++    kernel=${kernel/'/boot'}
++    initrd=${initrd/'/boot'}
++fi
++
++echo -e "\n" >>$cfg_file
++echo "$title" >>$cfg_file
++echo "$kernel" >>$cfg_file
++echo "$initrd" >>$cfg_file
++echo "$args" >>$cfg_file
++
+diff -ruN calamares-3.2.4-old/src/modules/locale/LocalePage.cpp calamares-3.2.4/src/modules/locale/LocalePage.cpp
+--- calamares-3.2.4-old/src/modules/locale/LocalePage.cpp	2020-09-08 20:06:16.000000000 +0800
++++ calamares-3.2.4/src/modules/locale/LocalePage.cpp	2020-11-05 19:40:45.032734079 +0800
+@@ -284,7 +284,7 @@
+     }
+     else
+     {
+-        m_tzWidget->setCurrentLocation( "America", "New_York" );
++        m_tzWidget->setCurrentLocation( "Aisa", "Shanghai" );
+     }
+     emit m_tzWidget->locationChanged( m_tzWidget->getCurrentLocation() );
+ 
+diff -ruN calamares-3.2.4-old/src/modules/locale/LocaleViewStep.cpp calamares-3.2.4/src/modules/locale/LocaleViewStep.cpp
+--- calamares-3.2.4-old/src/modules/locale/LocaleViewStep.cpp	2020-09-08 20:06:16.000000000 +0800
++++ calamares-3.2.4/src/modules/locale/LocaleViewStep.cpp	2020-11-05 19:41:09.982310229 +0800
+@@ -277,8 +277,8 @@
+     }
+     else
+     {
+-        m_startingTimezone = qMakePair( QStringLiteral( "America" ),
+-                                        QStringLiteral( "New_York" ) );
++        m_startingTimezone = qMakePair( QStringLiteral( "Asia" ),
++                                        QStringLiteral( "Shanghai" ) );
+     }
+ 
+     if ( configurationMap.contains( "localeGenPath" ) &&
+diff -ruN calamares-3.2.4-old/src/modules/mount/main.py calamares-3.2.4/src/modules/mount/main.py
+--- calamares-3.2.4-old/src/modules/mount/main.py	2020-11-05 09:53:01.596316030 +0800
++++ calamares-3.2.4/src/modules/mount/main.py	2020-11-05 09:52:04.000000000 +0800
+@@ -24,6 +24,28 @@
+ 
+ import libcalamares
+ 
++def remkfs_root(partitions):
++    """ 
++    reset filesystem of root partition.
++
++    :param partitions:
++    """
++    has_boot_mp = False
++    root_dev = ''
++    root_fstype = ''
++    for partition in partitions:
++        if "mountPoint" not in partition or not partition["mountPoint"]:
++            continue
++        mount_point = partition["mountPoint"]
++        if mount_point == "/boot":
++            has_boot_mp = True
++            continue
++        if mount_point == "/":
++            root_dev = partition["device"]
++            root_fstype = partition.get("fs", "").lower()
++
++    if not has_boot_mp and root_fstype == "ext4":
++        subprocess.check_call(["resize2fs", "-f", "-s", root_dev])
+ 
+ def mount_partitions(root_mount_point, partitions):
+     """
+@@ -133,6 +155,7 @@
+ 
+     # Sort by mount points to ensure / is mounted before the rest
+     partitions.sort(key=lambda x: x["mountPoint"])
++    remkfs_root(partitions)
+     mount_partitions(root_mount_point, partitions)
+     mount_partitions(root_mount_point, extra_mounts)
+ 
+diff -ruN calamares-3.2.4-old/src/modules/packages/main.py calamares-3.2.4/src/modules/packages/main.py
+--- calamares-3.2.4-old/src/modules/packages/main.py	2020-09-08 20:06:16.000000000 +0800
++++ calamares-3.2.4/src/modules/packages/main.py	2020-11-05 18:32:46.386183183 +0800
+@@ -260,8 +260,8 @@
+     def remove(self, pkgs):
+         check_target_env_call(["apt-get", "--purge", "-q", "-y",
+                                "remove"] + pkgs)
+-        check_target_env_call(["apt-get", "--purge", "-q", "-y",
+-                               "autoremove"])
++#        check_target_env_call(["apt-get", "--purge", "-q", "-y",
++#                               "autoremove"])
+ 
+     def update_db(self):
+         check_target_env_call(["apt-get", "update"])
+diff -ruN calamares-3.2.4-old/src/modules/removeuser/main.py calamares-3.2.4/src/modules/removeuser/main.py
+--- calamares-3.2.4-old/src/modules/removeuser/main.py	2020-11-05 09:53:01.596316030 +0800
++++ calamares-3.2.4/src/modules/removeuser/main.py	2020-11-05 09:52:04.000000000 +0800
+@@ -29,6 +29,13 @@
+     """
+     username = libcalamares.job.configuration["username"]
+ 
++    libcalamares.utils.check_target_env_call(["sed", "-i",
++                                              "s/^autologin-user=/#autologin-user=/",
++                                              "/etc/lightdm/lightdm.conf"])
++    libcalamares.utils.check_target_env_call(["sed", "-i",
++                                              "s/^autologin-session=/#autologin-session=/",
++                                              "/etc/lightdm/lightdm.conf"])
++
+     try:
+         libcalamares.utils.check_target_env_call(["userdel", "-f",
+                                                   "-r", username])
+diff -ruN calamares-3.2.4-old/src/modules/umount/main.py calamares-3.2.4/src/modules/umount/main.py
+--- calamares-3.2.4-old/src/modules/umount/main.py	2020-09-08 20:06:16.000000000 +0800
++++ calamares-3.2.4/src/modules/umount/main.py	2020-11-05 18:34:04.994356370 +0800
+@@ -25,7 +25,7 @@
+ import shutil
+ 
+ import libcalamares
+-from libcalamares.utils import gettext_path, gettext_languages
++from libcalamares.utils import gettext_path, gettext_languages, target_env_call
+ 
+ import gettext
+ _translation = gettext.translation("calamares-python",
+@@ -101,5 +101,6 @@
+         subprocess.check_call(["umount", "-lv", mount_point])
+ 
+     os.rmdir(root_mount_point)
++    target_env_call(["cp", "-arfp", "/etc/apt/sources.list.bak", "/etc/apt/sources.list"])
+ 
+     return None
+diff -ruN calamares-3.2.4-old/src/modules/unpackfs/main.py calamares-3.2.4/src/modules/unpackfs/main.py
+--- calamares-3.2.4-old/src/modules/unpackfs/main.py	2020-09-08 20:06:16.000000000 +0800
++++ calamares-3.2.4/src/modules/unpackfs/main.py	2020-11-05 18:36:03.381086397 +0800
+@@ -247,7 +247,6 @@
+                                    entry.source,
+                                    imgmountdir,
+                                    "-t", entry.sourcefs,
+-                                   "-o", "loop"
+                                    ])
+ 
+     def unpack_image(self, entry, imgmountdir):

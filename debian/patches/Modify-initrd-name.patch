@@ -1,0 +1,58 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ calamares (3.2.4-3.lnd.8) unstable; urgency=medium
+ .
+   * dracut add resume.
+Author: wangming <wangming@loongson.cn>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2021-04-26
+
+--- calamares-3.2.4.orig/src/modules/dracut/main.py
++++ calamares-3.2.4/src/modules/dracut/main.py
+@@ -34,7 +34,7 @@ def run_dracut():
+     ret = subprocess.Popen(["uname", "-r"], stdout=subprocess.PIPE)
+     kver, err = ret.communicate()
+     kver = kver.rstrip().decode()
+-    initrd_name = "/boot/initrd-" + kver + ".img"
++    initrd_name = "/boot/initrd.img-" + kver
+     return target_env_call(['dracut', '-f', '--add', 'resume', '--kver', kver, initrd_name])
+ 
+ 
+--- calamares-3.2.4.orig/src/modules/grubcfg/pmon-config.sh
++++ calamares-3.2.4/src/modules/grubcfg/pmon-config.sh
+@@ -39,7 +39,7 @@ function sd2wd
+ 
+ entry=('title Loongson Desktop GNU/Linux %kver%'
+        '    kernel /dev/fs/%fstype%@%wdx%/boot/vmlinuz-%kver%'
+-       '    initrd /dev/fs/%fstype%@%wdx%/boot/initrd-%kver%.img'
++       '    initrd /dev/fs/%fstype%@%wdx%/boot/initrd.img-%kver%'
+        '    args console=tty loglevel=0 locales=zh_CN.UTF-8 ro root=%rootdev% %params%')
+ 
+ boot_dir=$root_mount_point/boot
+@@ -76,6 +76,10 @@ if [ "$root_dev" != "$boot_dev" ]; then
+     initrd=${initrd/'/boot'}
+ fi
+ 
++echo "default 0" >$cfg_file
++echo "timeout 3" >>$cfg_file
++echo "showmenu 0" >>$cfg_file
++
+ echo -e "\n" >>$cfg_file
+ echo "$title" >>$cfg_file
+ echo "$kernel" >>$cfg_file

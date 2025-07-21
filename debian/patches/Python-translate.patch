@@ -1,0 +1,176 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ calamares (3.2.4-3.lnd.7) unstable; urgency=medium
+ .
+   * Python translate.
+Author: wangming <wangming@loongson.cn>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2021-01-16
+
+--- calamares-3.2.4.orig/lang/python/zh_CN/LC_MESSAGES/python.po
++++ calamares-3.2.4/lang/python/zh_CN/LC_MESSAGES/python.po
+@@ -25,113 +25,113 @@ msgstr ""
+ 
+ #: src/modules/displaymanager/main.py:380
+ msgid "Cannot write KDM configuration file"
+-msgstr ""
++msgstr "不能写 KDM 配置文件"
+ 
+ #: src/modules/displaymanager/main.py:381
+ msgid "KDM config file {!s} does not exist"
+-msgstr ""
++msgstr "KDM 配置文件 {!s} 不存在"
+ 
+ #: src/modules/displaymanager/main.py:442
+ msgid "Cannot write LXDM configuration file"
+-msgstr ""
++msgstr "不能写 LXDM 配置文件"
+ 
+ #: src/modules/displaymanager/main.py:443
+ msgid "LXDM config file {!s} does not exist"
+-msgstr ""
++msgstr "LXDM 配置文件 {!s} 不存在"
+ 
+ #: src/modules/displaymanager/main.py:517
+ msgid "Cannot write LightDM configuration file"
+-msgstr ""
++msgstr "不能写 LightDM 配置文件"
+ 
+ #: src/modules/displaymanager/main.py:518
+ msgid "LightDM config file {!s} does not exist"
+-msgstr ""
++msgstr "LightDM 配置文件 {!s} 不存在"
+ 
+ #: src/modules/displaymanager/main.py:592
+ msgid "Cannot configure LightDM"
+-msgstr ""
++msgstr "不能配置 LightDM"
+ 
+ #: src/modules/displaymanager/main.py:593
+ msgid "No LightDM greeter installed."
+-msgstr ""
++msgstr "未安装LightDM界面"
+ 
+ #: src/modules/displaymanager/main.py:624
+ msgid "Cannot write SLIM configuration file"
+-msgstr ""
++msgstr "不能写 SLIM 配置文件"
+ 
+ #: src/modules/displaymanager/main.py:625
+ msgid "SLIM config file {!s} does not exist"
+-msgstr ""
++msgstr "SLIM 配置文件 {!s} 不存在"
+ 
+ #: src/modules/displaymanager/main.py:740
+ #: src/modules/displaymanager/main.py:772
+ msgid "No display managers selected for the displaymanager module."
+-msgstr ""
++msgstr "没有显示管理器被选择。"
+ 
+ #: src/modules/displaymanager/main.py:741
+ msgid ""
+ "The displaymanagers list is empty or undefined in bothglobalstorage and "
+ "displaymanager.conf."
+-msgstr ""
++msgstr "显示管理器列表是空的，或者未在 bothglobalstorage 和 displaymanager.conf 中定义。"
+ 
+ #: src/modules/displaymanager/main.py:773
+ msgid "The list is empty after checking for installed display managers."
+-msgstr ""
++msgstr "未检测到显示管理器"
+ 
+ #: src/modules/displaymanager/main.py:821
+ msgid "Display manager configuration was incomplete"
+-msgstr ""
++msgstr "显示管理器配置不完整"
+ 
+ #: src/modules/unpackfs/main.py:40
+ msgid "Installing filesystems."
+-msgstr ""
++msgstr "安装文件系统"
+ 
+ #: src/modules/unpackfs/main.py:153
+ msgid "rsync failed with error code {}."
+-msgstr ""
++msgstr "同步失败，错误码 {}"
+ 
+ #: src/modules/unpackfs/main.py:209 src/modules/unpackfs/main.py:227
+ msgid "Failed to unpack image \"{}\""
+-msgstr ""
++msgstr "解压镜像 \"{}\" 失败"
+ 
+ #: src/modules/unpackfs/main.py:210
+ msgid ""
+ "Failed to find unsquashfs, make sure you have the squashfs-tools package "
+ "installed"
+-msgstr ""
++msgstr "未找到解压工具，确保您安装了 squashfs-tools 包"
+ 
+ #: src/modules/unpackfs/main.py:301
+ msgid "No mount point for root partition"
+-msgstr ""
++msgstr "未指定root分区挂载点"
+ 
+ #: src/modules/unpackfs/main.py:302
+ msgid "globalstorage does not contain a \"rootMountPoint\" key, doing nothing"
+-msgstr ""
++msgstr "全局存储不包含 \"rootMountPoint\" 键，无操作"
+ 
+ #: src/modules/unpackfs/main.py:307
+ msgid "Bad mount point for root partition"
+-msgstr ""
++msgstr "root分区的挂载点不合格"
+ 
+ #: src/modules/unpackfs/main.py:308
+ msgid "rootMountPoint is \"{}\", which does not exist, doing nothing"
+-msgstr ""
++msgstr "root挂载点 \"{}\" 不存在，无操作"
+ 
+ #: src/modules/unpackfs/main.py:321 src/modules/unpackfs/main.py:328
+ #: src/modules/unpackfs/main.py:333
+ msgid "Bad unsquash configuration"
+-msgstr ""
++msgstr "unsquash 失败的解压配置"
+ 
+ #: src/modules/unpackfs/main.py:322
+ msgid "The filesystem for \"{}\" ({}) is not supported"
+-msgstr ""
++msgstr "不支持 \"{}\" ({}) 文件系统"
+ 
+ #: src/modules/unpackfs/main.py:329
+ msgid "The source filesystem \"{}\" does not exist"
+-msgstr ""
++msgstr "源 \"{}\" 不存在"
+ 
+ #: src/modules/unpackfs/main.py:334
+ msgid "The destination \"{}\" in the target system is not a directory"
+-msgstr ""
++msgstr "目标 \"{}\" 不是一个目录"
+ 
+ #: src/modules/umount/main.py:40
+ msgid "Unmount file systems."
+@@ -147,7 +147,7 @@ msgstr "占位 Python 步骤 {}"
+ 
+ #: src/modules/rawfs/main.py:35
+ msgid "Installing data."
+-msgstr ""
++msgstr "安装数据"
+ 
+ #: src/modules/machineid/main.py:35
+ msgid "Generate machine-id."

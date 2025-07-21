@@ -1,0 +1,275 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ calamares (3.2.4-3.lnd.2) unstable; urgency=medium
+ .
+   * Disable uefi partition.
+Author: wangming <wangming@loongson.cn>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2020-12-09
+
+--- calamares-3.2.4.orig/src/modules/partition/core/PartitionActions.cpp
++++ calamares-3.2.4/src/modules/partition/core/PartitionActions.cpp
+@@ -119,34 +119,34 @@ doAutopartition( PartitionCoreModule* co
+     // before that one, numbered 0..2047).
+     qint64 firstFreeSector = bytesToSectors( empty_space_sizeB, dev->logicalSize() );
+ 
+-    if ( isEfi )
+-    {
+-        qint64 efiSectorCount = bytesToSectors( uefisys_part_sizeB, dev->logicalSize() );
+-        Q_ASSERT( efiSectorCount > 0 );
+-
+-        // Since sectors count from 0, and this partition is created starting
+-        // at firstFreeSector, we need efiSectorCount sectors, numbered
+-        // firstFreeSector..firstFreeSector+efiSectorCount-1.
+-        qint64 lastSector = firstFreeSector + efiSectorCount - 1;
+-        core->createPartitionTable( dev, PartitionTable::gpt );
+-        Partition* efiPartition = KPMHelpers::createNewPartition(
+-            dev->partitionTable(),
+-            *dev,
+-            PartitionRole( PartitionRole::Primary ),
+-            FileSystem::Fat32,
+-            firstFreeSector,
+-            lastSector,
+-            PartitionTable::FlagNone
+-        );
+-        PartitionInfo::setFormat( efiPartition, true );
+-        PartitionInfo::setMountPoint( efiPartition, o.efiPartitionMountPoint );
+-        core->createPartition( dev, efiPartition, PartitionTable::FlagEsp );
+-        firstFreeSector = lastSector + 1;
+-    }
+-    else
+-    {
++//    if ( isEfi )
++//    {
++//        qint64 efiSectorCount = bytesToSectors( uefisys_part_sizeB, dev->logicalSize() );
++//        Q_ASSERT( efiSectorCount > 0 );
++//
++//        // Since sectors count from 0, and this partition is created starting
++//        // at firstFreeSector, we need efiSectorCount sectors, numbered
++//        // firstFreeSector..firstFreeSector+efiSectorCount-1.
++//        qint64 lastSector = firstFreeSector + efiSectorCount - 1;
++//        core->createPartitionTable( dev, PartitionTable::gpt );
++//        Partition* efiPartition = KPMHelpers::createNewPartition(
++//            dev->partitionTable(),
++//            *dev,
++//            PartitionRole( PartitionRole::Primary ),
++//            FileSystem::Fat32,
++//            firstFreeSector,
++//            lastSector,
++//            PartitionTable::FlagNone
++//        );
++//        PartitionInfo::setFormat( efiPartition, true );
++//        PartitionInfo::setMountPoint( efiPartition, o.efiPartitionMountPoint );
++//        core->createPartition( dev, efiPartition, PartitionTable::FlagEsp );
++//        firstFreeSector = lastSector + 1;
++//    }
++//    else
++//    {
+         core->createPartitionTable( dev, PartitionTable::msdos );
+-    }
++//    }
+ 
+     const bool mayCreateSwap = ( o.swap == Choices::SmallSwap ) || ( o.swap == Choices::FullSwap );
+     bool shouldCreateSwap = false;
+--- calamares-3.2.4.orig/src/modules/partition/core/PartitionCoreModule.cpp
++++ calamares-3.2.4/src/modules/partition/core/PartitionCoreModule.cpp
+@@ -223,8 +223,8 @@ PartitionCoreModule::doInit()
+ 
+     //FIXME: this should be removed in favor of
+     //       proper KPM support for EFI
+-    if ( PartUtils::isEfiSystem() )
+-        scanForEfiSystemPartitions();
++//    if ( PartUtils::isEfiSystem() )
++//        scanForEfiSystemPartitions();
+ }
+ 
+ PartitionCoreModule::~PartitionCoreModule()
+--- calamares-3.2.4.orig/src/modules/partition/gui/PartitionViewStep.cpp
++++ calamares-3.2.4/src/modules/partition/gui/PartitionViewStep.cpp
+@@ -392,88 +392,88 @@ PartitionViewStep::onLeave()
+         return;
+     }
+ 
+-    if ( m_widget->currentWidget() == m_manualPartitionPage )
+-    {
+-        if ( PartUtils::isEfiSystem() )
+-        {
+-            QString espMountPoint = Calamares::JobQueue::instance()->globalStorage()->
+-                                        value( "efiSystemPartition").toString();
+-            Partition* esp = m_core->findPartitionByMountPoint( espMountPoint );
+-
+-            QString message;
+-            QString description;
+-            if ( !esp )
+-            {
+-                message = tr( "No EFI system partition configured" );
+-                description = tr( "An EFI system partition is necessary to start %1."
+-                                  "<br/><br/>"
+-                                  "To configure an EFI system partition, go back and "
+-                                  "select or create a FAT32 filesystem with the "
+-                                  "<strong>esp</strong> flag enabled and mount point "
+-                                  "<strong>%2</strong>.<br/><br/>"
+-                                  "You can continue without setting up an EFI system "
+-                                  "partition but your system may fail to start." )
+-                              .arg( *Calamares::Branding::ShortProductName )
+-                              .arg( espMountPoint );
+-            }
+-            else if ( esp && !PartUtils::isEfiBootable( esp ) )
+-            {
+-                message = tr( "EFI system partition flag not set" );
+-                description = tr( "An EFI system partition is necessary to start %1."
+-                                  "<br/><br/>"
+-                                  "A partition was configured with mount point "
+-                                  "<strong>%2</strong> but its <strong>esp</strong> "
+-                                  "flag is not set.<br/>"
+-                                  "To set the flag, go back and edit the partition."
+-                                  "<br/><br/>"
+-                                  "You can continue without setting the flag but your "
+-                                  "system may fail to start." )
+-                              .arg( *Calamares::Branding::ShortProductName )
+-                              .arg( espMountPoint );
+-            }
+-
+-            if ( !message.isEmpty() )
+-            {
+-                cWarning() << message;
+-                QMessageBox::warning( m_manualPartitionPage,
+-                                      message,
+-                                      description );
+-            }
+-        }
+-
+-        Partition* root_p = m_core->findPartitionByMountPoint( "/" );
+-        Partition* boot_p = m_core->findPartitionByMountPoint( "/boot" );
+-
+-        if ( root_p and boot_p )
+-        {
+-            QString message;
+-            QString description;
+-
+-            // If the root partition is encrypted, and there's a separate boot
+-            // partition which is not encrypted
+-            if ( root_p->fileSystem().type() == FileSystem::Luks &&
+-                 boot_p->fileSystem().type() != FileSystem::Luks )
+-            {
+-                message = tr( "Boot partition not encrypted" );
+-                description = tr( "A separate boot partition was set up together with "
+-                                  "an encrypted root partition, but the boot partition "
+-                                  "is not encrypted."
+-                                  "<br/><br/>"
+-                                  "There are security concerns with this kind of "
+-                                  "setup, because important system files are kept "
+-                                  "on an unencrypted partition.<br/>"
+-                                  "You may continue if you wish, but filesystem "
+-                                  "unlocking will happen later during system startup."
+-                                  "<br/>To encrypt the boot partition, go back and "
+-                                  "recreate it, selecting <strong>Encrypt</strong> "
+-                                  "in the partition creation window." );
+-
+-                QMessageBox::warning( m_manualPartitionPage,
+-                                      message,
+-                                      description );
+-            }
+-        }
+-    }
++//    if ( m_widget->currentWidget() == m_manualPartitionPage )
++//    {
++//        if ( PartUtils::isEfiSystem() )
++//        {
++//            QString espMountPoint = Calamares::JobQueue::instance()->globalStorage()->
++//                                        value( "efiSystemPartition").toString();
++//            Partition* esp = m_core->findPartitionByMountPoint( espMountPoint );
++//
++//            QString message;
++//            QString description;
++//            if ( !esp )
++//            {
++//                message = tr( "No EFI system partition configured" );
++//                description = tr( "An EFI system partition is necessary to start %1."
++//                                  "<br/><br/>"
++//                                  "To configure an EFI system partition, go back and "
++//                                  "select or create a FAT32 filesystem with the "
++//                                  "<strong>esp</strong> flag enabled and mount point "
++//                                  "<strong>%2</strong>.<br/><br/>"
++//                                  "You can continue without setting up an EFI system "
++//                                  "partition but your system may fail to start." )
++//                              .arg( *Calamares::Branding::ShortProductName )
++//                              .arg( espMountPoint );
++//            }
++//            else if ( esp && !PartUtils::isEfiBootable( esp ) )
++//            {
++//                message = tr( "EFI system partition flag not set" );
++//                description = tr( "An EFI system partition is necessary to start %1."
++//                                  "<br/><br/>"
++//                                  "A partition was configured with mount point "
++//                                  "<strong>%2</strong> but its <strong>esp</strong> "
++//                                  "flag is not set.<br/>"
++//                                  "To set the flag, go back and edit the partition."
++//                                  "<br/><br/>"
++//                                  "You can continue without setting the flag but your "
++//                                  "system may fail to start." )
++//                              .arg( *Calamares::Branding::ShortProductName )
++//                              .arg( espMountPoint );
++//            }
++//
++//            if ( !message.isEmpty() )
++//            {
++//                cWarning() << message;
++//                QMessageBox::warning( m_manualPartitionPage,
++//                                      message,
++//                                      description );
++//            }
++//        }
++
++//        Partition* root_p = m_core->findPartitionByMountPoint( "/" );
++//        Partition* boot_p = m_core->findPartitionByMountPoint( "/boot" );
++//
++//        if ( root_p and boot_p )
++//        {
++//            QString message;
++//            QString description;
++//
++//            // If the root partition is encrypted, and there's a separate boot
++//            // partition which is not encrypted
++//            if ( root_p->fileSystem().type() == FileSystem::Luks &&
++//                 boot_p->fileSystem().type() != FileSystem::Luks )
++//            {
++//                message = tr( "Boot partition not encrypted" );
++//                description = tr( "A separate boot partition was set up together with "
++//                                  "an encrypted root partition, but the boot partition "
++//                                  "is not encrypted."
++//                                  "<br/><br/>"
++//                                  "There are security concerns with this kind of "
++//                                  "setup, because important system files are kept "
++//                                  "on an unencrypted partition.<br/>"
++//                                  "You may continue if you wish, but filesystem "
++//                                  "unlocking will happen later during system startup."
++//                                  "<br/>To encrypt the boot partition, go back and "
++//                                  "recreate it, selecting <strong>Encrypt</strong> "
++//                                  "in the partition creation window." );
++//
++//                QMessageBox::warning( m_manualPartitionPage,
++//                                      message,
++//                                      description );
++//            }
++//        }
++//    }
+ }
+ 
+ 

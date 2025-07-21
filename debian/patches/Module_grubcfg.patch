@@ -1,0 +1,54 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ calamares (3.2.4-3.lnd.5) unstable; urgency=medium
+ .
+   * src/modules/grubcfg/main.py
+Author: wangming <wangming@loongson.cn>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2020-12-23
+
+--- calamares-3.2.4.orig/src/modules/grubcfg/main.py
++++ calamares-3.2.4/src/modules/grubcfg/main.py
+@@ -226,16 +226,16 @@ def run():
+ 
+     partitions = libcalamares.globalstorage.value("partitions")
+ 
+-    if fw_type == "efi":
+-        esp_found = False
+-
+-        for partition in partitions:
+-            if (partition["mountPoint"]
+-                    == libcalamares.globalstorage.value("efiSystemPartition")):
+-                esp_found = True
+-
+-        if not esp_found:
+-            return None
++#    if fw_type == "efi":
++#        esp_found = False
++#
++#        for partition in partitions:
++#            if (partition["mountPoint"]
++#                    == libcalamares.globalstorage.value("efiSystemPartition")):
++#                esp_found = True
++#
++#        if not esp_found:
++#            return None
+ 
+     root_mount_point = libcalamares.globalstorage.value("rootMountPoint")
+     branding = libcalamares.globalstorage.value("branding")

@@ -1,0 +1,10 @@
+Add-mips64el-supported.diff
+Disable_uefi_partition_on_loongson.patch
+Copy_grub_cfg_2_efi.patch
+Add-resume-params-in-pmon.patch
+Python-translate.patch
+dracut-add-resume.patch
+Module_grubcfg.patch
+disable-boot-partition-64bit-features.patch
+Update-buttons-after-delete-partition.patch
+Modify-initrd-name.patch
