@@ -300,14 +300,14 @@ if ( PYTHONLIBS_FOUND )
     endif()
 endif()
 
-if( NOT PYTHONLIBS_FOUND OR NOT CALAMARES_BOOST_PYTHON3_FOUND )
-    message(STATUS "Disabling Boost::Python modules")
-    set( WITH_PYTHON OFF )
-endif()
-if( NOT PYTHONLIBS_FOUND OR NOT PYTHONQT_FOUND )
-    message(STATUS "Disabling PythonQt modules")
-    set( WITH_PYTHONQT OFF )
-endif()
+#if( NOT PYTHONLIBS_FOUND OR NOT CALAMARES_BOOST_PYTHON3_FOUND )
+#    message(STATUS "Disabling Boost::Python modules")
+#    set( WITH_PYTHON OFF )
+#endif()
+#if( NOT PYTHONLIBS_FOUND OR NOT PYTHONQT_FOUND )
+#    message(STATUS "Disabling PythonQt modules")
+#    set( WITH_PYTHONQT OFF )
+#endif()
 
 ### Transifex Translation status
 #
